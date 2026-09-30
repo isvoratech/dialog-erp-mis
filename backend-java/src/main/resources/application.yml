@@ -3,7 +3,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/dialog_erp}
     username: ${DB_USER:dialog}
-    password: ${DB_PASSWORD:dialog}
+    password: ${DB_PASSWORD}
   jpa:
     open-in-view: false
     hibernate.ddl-auto: validate

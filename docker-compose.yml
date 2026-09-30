@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: dialog_erp
       POSTGRES_USER: dialog
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-this-password}
+      POSTGRES_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD is required}"
     volumes: [dialog_pg:/var/lib/postgresql/data]
     healthcheck: {test: ["CMD-SHELL", "pg_isready -U dialog -d dialog_erp"], interval: 5s, timeout: 5s, retries: 10}
   calculator:
@@ -15,9 +15,9 @@ services:
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/dialog_erp
       DB_USER: dialog
-      DB_PASSWORD: ${DB_PASSWORD:-change-this-password}
+      DB_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD is required}"
       CALCULATOR_URL: http://calculator:8000
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-before-production}
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}"
     depends_on: {postgres: {condition: service_healthy}, calculator: {condition: service_started}}
     ports: ["8080:8080"]
 volumes: {dialog_pg: {}}
