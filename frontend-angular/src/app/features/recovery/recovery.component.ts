@@ -33,7 +33,6 @@ import { API_BASE } from '../../api';
       <div class="actions">
         <button (click)="decide(r,'APPROVED')" [disabled]="r._saving">Approve</button>
         <button (click)="decide(r,'REJECTED')" [disabled]="r._saving">Reject</button>
-        <button (click)="decide(r,'DRAFT')" [disabled]="r._saving">Return to draft</button>
       </div>
       <p *ngIf="r._error" class="error">{{r._error}}</p>
     </div>

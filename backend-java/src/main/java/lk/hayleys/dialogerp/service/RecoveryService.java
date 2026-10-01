@@ -42,6 +42,7 @@ public class RecoveryService {
 
     for (Map<String,Object> line : lines) {
       BigDecimal source = decimal(line.get("total_amount_payable"));
+      boolean companyPayMissing = line.get("company_pay") == null;
       BigDecimal company = decimal(line.get("company_pay"));
       if (company == null) company = BigDecimal.ZERO;
       BigDecimal other = BigDecimal.ZERO;
@@ -53,8 +54,11 @@ public class RecoveryService {
       if (result == null) throw new IllegalStateException("Recovery calculator returned no result");
 
       formulaVersion = result.formulaVersion();
-      String approvalStatus = result.requiresReview() ? "NEEDS_REVIEW" : "DRAFT";
-      String reviewNote = String.join("; ", result.reviewReasons());
+      List<String> reviewReasons = new ArrayList<>(result.reviewReasons());
+      if (companyPayMissing) reviewReasons.add("missing_company_pay");
+      boolean requiresReview = result.requiresReview() || companyPayMissing;
+      String approvalStatus = requiresReview ? "NEEDS_REVIEW" : "DRAFT";
+      String reviewNote = String.join("; ", reviewReasons);
 
       db.update(
           "insert into recovery_row(billing_line_id,billing_batch_id,mobile_norm,source_bill,company_pay,other_charges,recovery_amount,company_payable,match_status,approval_status,formula_version,review_note) values(?,?,?,?,?,?,?,?,?,?,?,?) " +
@@ -73,7 +77,7 @@ public class RecoveryService {
           reviewNote);
 
       created++;
-      if (result.requiresReview()) review++;
+      if (requiresReview) review++;
       bill = bill.add(source);
       recovery = recovery.add(result.recoveryAmount());
     }
@@ -110,7 +114,7 @@ public class RecoveryService {
       String actor) {
 
     String normalized = decision == null ? "" : decision.trim().toUpperCase(Locale.ROOT);
-    if (!Set.of("APPROVED", "REJECTED", "DRAFT").contains(normalized)) {
+    if (!Set.of("APPROVED", "REJECTED").contains(normalized)) {
       throw new IllegalArgumentException("Invalid decision");
     }
     if (("APPROVED".equals(normalized) || "REJECTED".equals(normalized)) && (note == null || note.isBlank())) {
