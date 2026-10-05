@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import lk.hayleys.dialogerp.service.BillingReportService;
 import lk.hayleys.dialogerp.service.DashboardService;
 import lk.hayleys.dialogerp.service.RecoveryService;
 import lk.hayleys.dialogerp.service.WorkbookImportService;
@@ -19,11 +20,17 @@ public class ErpController {
   private final WorkbookImportService importer;
   private final RecoveryService recovery;
   private final DashboardService dashboard;
+  private final BillingReportService billingReport;
 
-  public ErpController(WorkbookImportService importer, RecoveryService recovery, DashboardService dashboard) {
+  public ErpController(
+      WorkbookImportService importer,
+      RecoveryService recovery,
+      DashboardService dashboard,
+      BillingReportService billingReport) {
     this.importer = importer;
     this.recovery = recovery;
     this.dashboard = dashboard;
+    this.billingReport = billingReport;
   }
 
   @GetMapping("/auth/me")
@@ -36,6 +43,11 @@ public class ErpController {
   @GetMapping("/reports/dashboard")
   public Map<String,Object> dashboard() {
     return dashboard.dashboard();
+  }
+
+  @GetMapping("/reports/billing/{billingBatchId}")
+  public Map<String,Object> monthlyBilling(@PathVariable long billingBatchId) {
+    return billingReport.monthlyBilling(billingBatchId);
   }
 
   @PostMapping(value="/imports/workbook", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)

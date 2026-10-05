@@ -69,6 +69,9 @@ public class WorkbookImportService {
     String effectiveContractNo = firstNonBlank(requestedContractNo, corporateCode);
 
     Map<String,Object> existing = existingByHash(hash);
+    if (existing == null) {
+      existing = existingDialogInvoice(invoiceNumber, corporateCode, billPeriod);
+    }
     if (existing != null) {
       Map<String,Object> result = new LinkedHashMap<>();
       result.put("batchId", existing.get("id"));
@@ -330,6 +333,27 @@ public class WorkbookImportService {
     result.put("billTotal", total);
     result.put("idempotent", false);
     return result;
+  }
+
+  private Map<String,Object> existingDialogInvoice(
+      String invoiceNumber,
+      String corporateCode,
+      String billPeriod) {
+    if (blankToNull(invoiceNumber) == null || blankToNull(corporateCode) == null || blankToNull(billPeriod) == null) {
+      return null;
+    }
+    List<Map<String,Object>> rows = db.queryForList(
+        "select i.id, bb.id as billing_batch_id " +
+        "from import_batch i " +
+        "join billing_batch bb on bb.import_batch_id=i.id " +
+        "join lateral (select raw_json from billing_line where billing_batch_id=bb.id order by id limit 1) x on true " +
+        "where x.raw_json->>'_format'='DIALOG_INVOICE' " +
+        "and x.raw_json->>'_invoiceNumber'=? " +
+        "and x.raw_json->>'_corporateCode'=? " +
+        "and x.raw_json->>'_billPeriod'=? " +
+        "order by i.id desc limit 1",
+        invoiceNumber, corporateCode, billPeriod);
+    return rows.isEmpty() ? null : rows.get(0);
   }
 
   private Map<String,Object> existingByHash(String hash) {
